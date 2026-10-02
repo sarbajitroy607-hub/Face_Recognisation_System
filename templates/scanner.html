@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Biometric Terminal &bull; Mark Attendance &bull; AttendAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+    }
+  </style>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#0037b0",
+            "primary-container": "#1d4ed8",
+            "on-primary": "#ffffff",
+            "secondary": "#006398",
+            "secondary-container": "#5bb8fe",
+            "on-secondary": "#ffffff",
+            "secondary-fixed": "#cce5ff",
+            "secondary-fixed-dim": "#93ccff",
+            "tertiary": "#004f35",
+            "tertiary-container": "#006a48",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary-fixed-dim": "#4edea3",
+            "surface": "#faf8ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2f3ff",
+            "surface-container": "#eaedff",
+            "surface-container-high": "#e2e7ff",
+            "surface-variant": "#dae2fd",
+            "on-surface": "#131b2e",
+            "on-surface-variant": "#434655",
+            "inverse-surface": "#283044",
+            "inverse-on-surface": "#eef0ff",
+            "outline": "#747686",
+            "outline-variant": "#c4c5d7",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-surface font-sans text-on-surface min-h-screen">
+  
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="h-16 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" class="w-7 h-7">
+              <path d="M10 16V13C10 11.3431 11.3431 10 13 10H16" stroke="#93C5FD" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M24 10H27C28.6569 10 30 11.3431 30 13V16" stroke="#93C5FD" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M30 24V27C30 28.6569 28.6569 30 27 30H24" stroke="#93C5FD" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M16 30H13C11.3431 30 10 28.6569 10 27V24" stroke="#93C5FD" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="20" cy="18" r="4.5" fill="#FFFFFF"/>
+              <path d="M14 26.5C14 24.2 16.5 22.5 20 22.5C23.5 22.5 26 24.2 26 26.5" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="28" cy="12" r="2.5" fill="#38BDF8"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-lg font-extrabold tracking-tight text-on-surface leading-tight block">AttendAI</span>
+            <span class="text-[10px] text-on-surface-variant font-medium">Smart Biometric Terminal</span>
+          </div>
+          <div class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-secondary text-xs font-semibold ml-2">
+            <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+            <span>Gateway Node Active</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="/dashboard" class="inline-flex items-center gap-1 text-xs font-bold text-on-surface hover:text-primary transition px-3 py-2 rounded-xl bg-surface-container-low border border-outline-variant/30">
+            <span class="material-symbols-outlined text-sm">dashboard</span>
+            <span>Dashboard</span>
+          </a>
+          <div class="flex items-center gap-2 pl-2 py-1 pr-3 rounded-full bg-surface-container-low border border-outline-variant/30">
+            {% if user.avatar %}
+              <img alt="{{ user.name }}" class="w-7 h-7 rounded-full object-cover ring-2 ring-primary/20" src="{{ user.avatar }}"/>
+            {% else %}
+              <div class="w-7 h-7 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center">
+                {{ user.name[:2]|upper }}
+              </div>
+            {% endif %}
+            <span class="text-xs font-bold text-on-surface">{{ user.name }}</span>
+          </div>
+
+          <a href="/api/logout" class="p-2 rounded-xl text-on-surface-variant hover:text-error hover:bg-error-container/30 transition" title="Sign Out">
+            <span class="material-symbols-outlined text-xl">logout</span>
+          </a>
+        </div>
+      </div>
+
+      <nav class="flex items-center gap-1 overflow-x-auto pb-2 pt-1 border-t border-surface-container/60">
+        <a class="px-3.5 py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition rounded-xl text-xs font-semibold whitespace-nowrap" href="/dashboard">Dashboard</a>
+        <a aria-current="page" class="px-3.5 py-1.5 transition rounded-xl bg-primary text-on-primary text-xs font-bold shadow-xs whitespace-nowrap" href="/scanner">Mark Attendance (Live Scanner)</a>
+        <a class="px-3.5 py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition rounded-xl text-xs font-semibold whitespace-nowrap" href="/history">Attendance History &amp; Database</a>
+        <a class="px-3.5 py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition rounded-xl text-xs font-semibold whitespace-nowrap" href="/register">Enroll New Student</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto pt-32 pb-16 px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col gap-6">
+
+      <!-- Top Context Ribbon -->
+      <div class="w-full flex flex-wrap items-center justify-between gap-3 bg-surface-container-lowest p-4 sm:p-5 rounded-2xl shadow-sm border border-outline-variant/30">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-primary shrink-0">
+            <span class="material-symbols-outlined text-2xl">center_focus_strong</span>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h1 class="text-base sm:text-lg font-bold text-on-surface truncate">Biometric Terminal: LH-102</h1>
+              <span class="px-2 py-0.5 rounded-full bg-surface-container text-tertiary font-mono text-[10px] font-bold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim animate-pulse"></span>
+                ACTIVE SENSOR
+              </span>
+            </div>
+            <p class="text-xs text-on-surface-variant truncate">Faculty Gateway &bull; Neural Facial Vector Matching Engine v4.2</p>
+          </div>
+        </div>
+
+        <!-- State Demonstration Controller Tabs -->
+        <div class="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-xl shrink-0 overflow-x-auto border border-outline-variant/30">
+          <span class="text-[10px] font-bold text-on-surface-variant px-2 uppercase tracking-wider hidden md:inline">Simulate State:</span>
+          <button class="state-pill px-3 py-1 rounded-lg text-xs font-semibold transition bg-primary text-on-primary shadow-xs flex items-center gap-1 cursor-pointer" id="btn-state-1" onclick="switchState('state-1')">
+            <span class="material-symbols-outlined text-xs">view_in_ar</span>
+            <span>1. Face Detected</span>
+          </button>
+          <button class="state-pill px-3 py-1 rounded-lg text-xs font-semibold transition text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high flex items-center gap-1 cursor-pointer" id="btn-state-2" onclick="switchState('state-2')">
+            <span class="material-symbols-outlined text-xs">autorenew</span>
+            <span>2. Verifying</span>
+          </button>
+          <button class="state-pill px-3 py-1 rounded-lg text-xs font-semibold transition text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high flex items-center gap-1 cursor-pointer" id="btn-state-3" onclick="switchState('state-3')">
+            <span class="material-symbols-outlined text-xs">verified</span>
+            <span>3. Success</span>
+          </button>
+          <button class="state-pill px-3 py-1 rounded-lg text-xs font-semibold transition text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high flex items-center gap-1 cursor-pointer" id="btn-state-4" onclick="switchState('state-4')">
+            <span class="material-symbols-outlined text-xs">error_outline</span>
+            <span>4. Flagged</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left Terminal Viewport Column -->
+        <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+          
+          <!-- Viewfinder Housing -->
+          <div class="relative w-full rounded-2xl overflow-hidden bg-inverse-surface shadow-xl border border-white/10">
+            
+            <!-- Positioning Guide Toast -->
+            <div class="absolute top-4 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
+              <div class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-inverse-surface/85 backdrop-blur-md text-inverse-on-surface text-xs font-semibold shadow-lg border border-white/10 transition" id="positioning-guide">
+                <span class="material-symbols-outlined text-secondary-container text-base" id="guide-icon">face</span>
+                <span id="guide-text">Align your face within the frame &bull; Look directly at sensor</span>
+              </div>
+            </div>
+
+            <!-- Viewport Canvas -->
+            <div class="relative w-full aspect-[4/3] sm:aspect-[16/10] max-h-[520px] bg-[#0c1324] flex items-center justify-center overflow-hidden">
+              <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#1e293b]/40 via-[#0a0f1d] to-[#05070e]"></div>
+              
+              <div class="absolute inset-0 opacity-15 pointer-events-none bg-[linear-gradient(to_right,#38bdf8_1px,transparent_1px),linear-gradient(to_bottom,#38bdf8_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+
+              <!-- Camera Viewport / Central Target Box -->
+              <div class="relative z-10 w-72 h-80 sm:w-80 sm:h-96 flex items-center justify-center">
+                <video id="scannerVideo" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover rounded-2xl shadow-2xl hidden"></video>
+                <canvas id="scannerCaptureCanvas" class="hidden"></canvas>
+                
+                <!-- Optical Silhouette Frame -->
+                <div class="relative w-64 h-72 sm:w-72 sm:h-84 rounded-2xl overflow-hidden flex flex-col items-center justify-center bg-surface-variant/5 border border-white/10" id="portraitSubject">
+                  <div class="w-24 h-24 rounded-full bg-secondary-container/10 border-2 border-dashed border-secondary-container flex items-center justify-center mb-2">
+                    <span class="material-symbols-outlined text-5xl text-secondary-container">face</span>
+                  </div>
+                  <span class="text-xs font-bold text-inverse-on-surface">Target Optical Alignment Area</span>
+                  <span class="font-mono text-[10px] text-surface-variant opacity-70 mt-1">Click "Start Webcam" for real camera</span>
+                </div>
+
+                <!-- 68-Point Landmark Mesh -->
+                <div class="absolute inset-0 z-20 pointer-events-none transition duration-300 opacity-90" id="landmark-points-layer">
+                  <svg class="w-full h-full text-secondary-container" fill="currentColor" viewBox="0 0 288 336">
+                    <circle cx="48" cy="180" r="1.5"></circle><circle cx="56" cy="208" r="1.5"></circle><circle cx="68" cy="234" r="1.5"></circle><circle cx="84" cy="256" r="1.5"></circle><circle cx="106" cy="274" r="1.5"></circle><circle cx="144" cy="286" r="2"></circle><circle cx="182" cy="274" r="1.5"></circle><circle cx="204" cy="256" r="1.5"></circle><circle cx="220" cy="234" r="1.5"></circle><circle cx="232" cy="208" r="1.5"></circle><circle cx="240" cy="180" r="1.5"></circle>
+                    <circle cx="76" cy="132" r="1.5"></circle><circle cx="92" cy="126" r="1.5"></circle><circle cx="110" cy="128" r="1.5"></circle><circle cx="126" cy="134" r="1.5"></circle>
+                    <circle cx="162" cy="134" r="1.5"></circle><circle cx="178" cy="128" r="1.5"></circle><circle cx="196" cy="126" r="1.5"></circle><circle cx="212" cy="132" r="1.5"></circle>
+                    <circle cx="88" cy="148" r="2"></circle><circle cx="98" cy="144" r="1.5"></circle><circle cx="112" cy="144" r="1.5"></circle><circle cx="122" cy="150" r="2"></circle>
+                    <circle cx="166" cy="150" r="2"></circle><circle cx="176" cy="144" r="1.5"></circle><circle cx="190" cy="144" r="1.5"></circle><circle cx="200" cy="148" r="2"></circle>
+                    <circle cx="144" cy="154" r="1.5"></circle><circle cx="144" cy="172" r="1.5"></circle><circle cx="144" cy="190" r="1.5"></circle><circle cx="132" cy="202" r="1.5"></circle><circle cx="144" cy="206" r="2"></circle><circle cx="156" cy="202" r="1.5"></circle>
+                    <circle cx="114" cy="232" r="1.5"></circle><circle cx="130" cy="226" r="1.5"></circle><circle cx="144" cy="228" r="1.5"></circle><circle cx="158" cy="226" r="1.5"></circle><circle cx="174" cy="232" r="1.5"></circle>
+                    <line opacity="0.4" stroke="currentColor" stroke-dasharray="2 2" stroke-width="0.5" x1="88" x2="144" y1="148" y2="190"></line>
+                    <line opacity="0.4" stroke="currentColor" stroke-dasharray="2 2" stroke-width="0.5" x1="200" x2="144" y1="148" y2="190"></line>
+                  </svg>
+                </div>
+
+                <!-- Laser Scan Line -->
+                <div class="absolute inset-x-0 h-1 z-30 pointer-events-none bg-gradient-to-r from-transparent via-secondary-container to-transparent shadow-[0_0_12px_#38bdf8] animate-bounce" id="laser-scan-line"></div>
+              </div>
+
+              <!-- Reticle Target Corners -->
+              <div class="absolute inset-0 pointer-events-none transition duration-300" id="reticle-box">
+                <div class="reticle-corner absolute top-8 left-8 w-8 h-8 border-t-2 border-l-2 border-secondary-container rounded-tl-lg shadow-[0_0_8px_rgba(91,184,254,0.6)]"></div>
+                <div class="reticle-corner absolute top-8 right-8 w-8 h-8 border-t-2 border-r-2 border-secondary-container rounded-tr-lg shadow-[0_0_8px_rgba(91,184,254,0.6)]"></div>
+                <div class="reticle-corner absolute bottom-8 left-8 w-8 h-8 border-b-2 border-l-2 border-secondary-container rounded-bl-lg shadow-[0_0_8px_rgba(91,184,254,0.6)]"></div>
+                <div class="reticle-corner absolute bottom-8 right-8 w-8 h-8 border-b-2 border-r-2 border-secondary-container rounded-br-lg shadow-[0_0_8px_rgba(91,184,254,0.6)]"></div>
+                
+                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-inverse-surface/90 text-inverse-on-surface font-mono text-[10px] whitespace-nowrap shadow-md flex items-center gap-1.5 border border-white/10" id="reticle-status-pill">
+                  <span class="w-1.5 h-1.5 rounded-full bg-secondary-container animate-ping"></span>
+                  <span id="reticle-confidence-text">CONFIDENCE: 98.8% &bull; LOCK READY</span>
+                </div>
+              </div>
+
+              <!-- State 2: Loading Overlay -->
+              <div class="absolute inset-0 z-40 rounded-2xl bg-inverse-surface/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center hidden" id="state-loading-overlay">
+                <div class="relative w-16 h-16 mb-3">
+                  <div class="absolute inset-0 rounded-full border-4 border-surface-container-high/30"></div>
+                  <div class="absolute inset-0 rounded-full border-4 border-secondary-container border-t-transparent animate-spin"></div>
+                  <span class="material-symbols-outlined absolute inset-0 m-auto text-secondary-container text-2xl">fingerprint</span>
+                </div>
+                <span class="text-xl font-bold text-inverse-on-surface tracking-tight">Verifying Biometric Vector...</span>
+                <span class="font-mono text-sm text-secondary-container mt-1">Matching against trained face vectors</span>
+                <span class="text-xs text-inverse-on-surface/70 mt-1">KNN distance computation in progress</span>
+              </div>
+
+              <!-- State 3: Success Overlay -->
+              <div class="absolute inset-0 z-40 rounded-2xl bg-surface-container-lowest p-6 flex flex-col items-center justify-between text-center shadow-2xl hidden" id="state-success-overlay">
+                <div class="w-full flex items-center justify-between">
+                  <span class="px-2.5 py-0.5 rounded-full bg-surface-container text-tertiary font-mono text-[11px] font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                    VERIFIED MATCH
+                  </span>
+                  <span class="font-mono text-xs text-on-surface-variant font-bold">CONF: 99.4%</span>
+                </div>
+                
+                <div class="flex flex-col items-center my-auto">
+                  <div class="w-16 h-16 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary mb-2 shadow-inner">
+                    <span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                  </div>
+                  <h3 class="text-2xl font-bold text-on-surface tracking-tight">Attendance Recorded!</h3>
+                  <p class="text-base text-primary font-bold mt-1" id="successStudentName">{{ user.name }}</p>
+                  <p class="font-mono text-xs text-on-surface-variant" id="successStudentId">Student ID: {{ user.id }}</p>
+                </div>
+
+                <div class="w-full bg-surface-container-low p-3 rounded-xl flex flex-col gap-1 text-left border border-outline-variant/30">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="text-on-surface-variant">Session:</span>
+                    <span class="text-on-surface font-bold">Face Recognition Biometric Gateway</span>
+                  </div>
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="text-on-surface-variant">Timestamp:</span>
+                    <span class="font-mono text-on-surface font-semibold" id="successTimestamp">Just Now</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- State 4: Error State -->
+              <div class="absolute inset-0 z-40 rounded-2xl bg-surface-container-lowest p-6 flex flex-col items-center justify-between text-center shadow-2xl hidden" id="state-error-overlay">
+                <div class="w-full flex items-center justify-between">
+                  <span class="px-2.5 py-0.5 rounded-full bg-error-container text-on-error-container font-mono text-[11px] font-bold flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+                    CONFIDENCE LOW
+                  </span>
+                  <span class="font-mono text-xs text-error font-bold">MATCH_FAIL</span>
+                </div>
+                
+                <div class="flex flex-col items-center my-auto">
+                  <div class="w-16 h-16 rounded-full bg-error-container/60 flex items-center justify-center text-error mb-2">
+                    <span class="material-symbols-outlined text-4xl">error</span>
+                  </div>
+                  <h3 class="text-xl font-bold text-on-surface tracking-tight" id="errorStateTitle">Face Not Recognized</h3>
+                  <p class="text-xs text-on-surface-variant mt-1 max-w-xs" id="errorStateReason">
+                    Ensure adequate front-facing lighting and look straight into camera lens.
+                  </p>
+                </div>
+
+                <div class="w-full bg-error-container/20 p-3 rounded-xl text-left border border-error/20">
+                  <span class="text-xs text-on-error-container font-bold block mb-1">Recommended Adjustments:</span>
+                  <ul class="text-[11px] text-on-surface-variant list-disc pl-4 space-y-0.5">
+                    <li>Center your face inside the bracket</li>
+                    <li>Ensure proper lighting on face</li>
+                    <li>Avoid reflections or tinted glasses</li>
+                  </ul>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Viewfinder Telemetry -->
+            <div class="absolute top-4 left-4 z-20 pointer-events-none flex flex-col gap-1 font-mono text-[10px] text-secondary-container">
+              <div class="flex items-center gap-1 bg-inverse-surface/60 backdrop-blur-sm px-2 py-0.5 rounded border border-white/10">
+                <span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+                <span>REC &bull; LIVE SENSOR FEED</span>
+              </div>
+              <div class="text-inverse-on-surface/70 text-[9px] pl-1">GATEWAY_CAM_04 // LH-102 [1080P]</div>
+            </div>
+
+            <!-- Bottom Status Strip -->
+            <div class="absolute bottom-0 inset-x-0 z-20 bg-gradient-to-t from-inverse-surface via-inverse-surface/80 to-transparent pt-6 pb-3 px-4 flex flex-wrap items-center justify-between text-inverse-on-surface text-[10px] font-mono gap-y-1">
+              <div class="flex items-center gap-4">
+                <div class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm text-secondary-container">wb_sunny</span>
+                  <span class="text-inverse-on-surface/70">Lighting:</span>
+                  <span class="text-secondary-fixed">Optimal</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm text-tertiary-fixed-dim">verified_user</span>
+                  <span class="text-inverse-on-surface/70">Liveness:</span>
+                  <span class="text-tertiary-fixed">Passed</span>
+                </div>
+              </div>
+              <div class="text-inverse-on-surface/60">
+                <span>MODEL: KNN-HaarCascade</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Camera Action Controls -->
+          <div class="w-full bg-surface-container-lowest p-4 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <button class="inline-flex items-center gap-1.5 bg-primary text-on-primary text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-primary-container active:scale-[0.99] transition shadow-md cursor-pointer" onclick="initiateScanCycle()">
+                <span class="material-symbols-outlined text-base">document_scanner</span>
+                <span id="btnScanText">Scan &amp; Mark Face</span>
+              </button>
+              
+              <button class="inline-flex items-center gap-1.5 bg-surface-container text-on-surface text-xs font-semibold px-3 py-2.5 rounded-xl hover:bg-surface-container-high transition border border-outline-variant/30 cursor-pointer" onclick="toggleWebcam()">
+                <span class="material-symbols-outlined text-base text-secondary" id="camToggleIcon">videocam</span>
+                <span id="camToggleLabel">Start Webcam</span>
+              </button>
+
+              <button id="btnAutoScan" class="inline-flex items-center gap-1.5 bg-surface-container text-on-surface text-xs font-semibold px-3 py-2.5 rounded-xl hover:bg-surface-container-high transition border border-outline-variant/30 cursor-pointer" onclick="toggleAutoScan()">
+                <span class="material-symbols-outlined text-base text-tertiary" id="autoScanIcon">autorenew</span>
+                <span id="autoScanLabel">Auto-Scan: OFF</span>
+              </button>
+
+              <button class="inline-flex items-center gap-1.5 bg-surface-container text-on-surface text-xs font-semibold px-3 py-2.5 rounded-xl hover:bg-surface-container-high transition border border-outline-variant/30 cursor-pointer" onclick="toggleLandmarks()">
+                <span class="material-symbols-outlined text-base">grain</span>
+                <span id="landmark-toggle-label">Toggle Landmarks</span>
+              </button>
+            </div>
+            
+            <div class="flex items-center gap-2 text-on-surface-variant text-xs">
+              <span class="font-mono text-[10px] bg-surface-container px-2 py-1 rounded-lg border border-outline-variant/30 hidden sm:inline">Press 'o' or Space to Scan</span>
+              <span class="material-symbols-outlined text-sm text-secondary">lock</span>
+              <span>Encrypted Vector Match</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Current Session, Roster Feed & Actions -->
+        <div class="lg:col-span-5 xl:col-span-4 flex flex-col gap-4">
+          
+          <!-- Current Class Schedule Card -->
+          <div class="w-full bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/30">
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-surface-container text-primary font-mono text-[10px] font-bold">
+                ACTIVE GATEWAY
+              </span>
+              <span class="font-mono text-xs text-tertiary flex items-center gap-1 font-bold">
+                <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+                ACTIVE
+              </span>
+            </div>
+            
+            <h2 class="text-xl font-bold text-on-surface">Biometric Attendance Terminal</h2>
+            <p class="text-xs text-on-surface-variant mt-0.5">Automated Optical Landmark Recognition</p>
+
+            <div class="mt-4 pt-3 bg-surface-container-low rounded-xl p-3 flex flex-col gap-2 border border-outline-variant/30 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-on-surface-variant flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">person</span> Current User:
+                </span>
+                <span class="font-bold text-on-surface">{{ user.name }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-on-surface-variant flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">tag</span> Student ID:
+                </span>
+                <span class="font-mono text-on-surface">{{ user.id }}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-on-surface-variant flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">location_on</span> Station:
+                </span>
+                <span class="font-bold text-on-surface">Terminal Node LH-102</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Real-Time Session Check-in Activity Feed -->
+          <div class="w-full bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col">
+            <div class="flex items-center justify-between pb-3 mb-2 border-b border-surface-container">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">history</span>
+                <h3 class="text-sm font-bold text-on-surface">Live Check-in Stream</h3>
+              </div>
+              <span class="font-mono text-[10px] text-on-surface-variant uppercase font-semibold">TODAY'S CSV LOGS</span>
+            </div>
+
+            <!-- Roster Stream List -->
+            <div class="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1" id="liveCheckinList">
+              {% if live_records %}
+                {% for r in live_records %}
+                  <div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition border border-outline-variant/20">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+                        {{ r.name[:2]|upper }}
+                      </div>
+                      <div class="min-w-0">
+                        <span class="text-xs font-bold text-on-surface block truncate">{{ r.name }}</span>
+                        <span class="font-mono text-[10px] text-on-surface-variant block">{{ r.date }}</span>
+                      </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <span class="font-mono text-xs text-tertiary font-bold block">{{ r.time }}</span>
+                      <span class="text-[10px] text-on-surface-variant">Verified</span>
+                    </div>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <div class="p-6 text-center text-xs text-on-surface-variant" id="emptyCheckinMsg">
+                  No check-ins logged yet today. Click "Initiate Re-Scan" or "Manual Override" to record attendance.
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="w-full bg-surface-container-lowest p-4 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col gap-2">
+            <button class="w-full inline-flex items-center justify-center gap-2 bg-surface-container hover:bg-surface-container-high text-on-surface font-bold text-xs py-3 px-4 rounded-xl transition cursor-pointer border border-outline-variant/30" onclick="openManualModal()">
+              <span class="material-symbols-outlined text-base text-primary">how_to_reg</span>
+              <span>Manual Override / Log Attendee</span>
+            </button>
+            <a class="w-full inline-flex items-center justify-center gap-2 bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-semibold text-xs py-2.5 px-4 rounded-xl transition border border-outline-variant/20" href="/dashboard">
+              <span class="material-symbols-outlined text-base">arrow_back</span>
+              <span>Return to Student Dashboard</span>
+            </a>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MANUAL OVERRIDE MODAL -->
+  <div class="fixed inset-0 z-50 bg-inverse-surface/70 backdrop-blur-md hidden flex items-center justify-center p-4" id="manualModal">
+    <div class="relative w-full max-w-md bg-surface-container-lowest rounded-2xl shadow-2xl overflow-hidden p-6 flex flex-col border border-white/20">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-xl">how_to_reg</span>
+          <h3 class="text-base font-bold text-on-surface">Manual Attendance Override</h3>
+        </div>
+        <button class="p-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container" onclick="closeManualModal()">
+          <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+      </div>
+
+      <form id="manualForm" onsubmit="handleManualSubmit(event)" class="flex flex-col gap-3">
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-on-surface">Select Registered Student</label>
+          <select id="manualStudentSelect" class="w-full bg-surface-container-low text-on-surface text-xs px-3 py-2.5 rounded-xl border border-outline-variant/30 outline-none focus:border-primary">
+            {% for u in all_users %}
+              <option value="{{ u.name }}">{{ u.name }} ({{ u.id }})</option>
+            {% endfor %}
+            <option value="Custom">-- Enter Custom Name --</option>
+          </select>
+        </div>
+
+        <div class="flex flex-col gap-1 hidden" id="customNameBox">
+          <label class="text-xs font-semibold text-on-surface">Custom Attendee Name</label>
+          <input type="text" id="manualCustomName" placeholder="e.g. John Smith" class="w-full bg-surface-container-low text-on-surface text-xs px-3 py-2.5 rounded-xl border border-outline-variant/30 outline-none focus:border-primary"/>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="text-xs font-semibold text-on-surface">Time of Record</label>
+          <input type="text" id="manualTime" value="" class="w-full bg-surface-container-low text-on-surface font-mono text-xs px-3 py-2.5 rounded-xl border border-outline-variant/30 outline-none focus:border-primary"/>
+        </div>
+
+        <div class="flex gap-2 mt-2">
+          <button type="button" onclick="closeManualModal()" class="flex-1 bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-bold py-2.5 rounded-xl transition">
+            Cancel
+          </button>
+          <button type="submit" id="btnManualSubmit" class="flex-1 bg-primary hover:bg-primary-container text-on-primary text-xs font-bold py-2.5 rounded-xl shadow-md transition">
+            Save Record
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let showLandmarks = true;
+    let scannerStream = null;
+
+    function switchState(stateId) {
+      const buttons = document.querySelectorAll('.state-pill');
+      buttons.forEach(btn => {
+        btn.className = "state-pill px-3 py-1 rounded-lg text-xs font-semibold transition text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high flex items-center gap-1 cursor-pointer";
+      });
+
+      const activeBtn = document.getElementById('btn-' + stateId);
+      if (activeBtn) {
+        activeBtn.className = "state-pill px-3 py-1 rounded-lg text-xs font-semibold transition bg-primary text-on-primary shadow-xs flex items-center gap-1 cursor-pointer";
+      }
+
+      const loadingOverlay = document.getElementById('state-loading-overlay');
+      const successOverlay = document.getElementById('state-success-overlay');
+      const errorOverlay = document.getElementById('state-error-overlay');
+      const landmarkLayer = document.getElementById('landmark-points-layer');
+      const laserLine = document.getElementById('laser-scan-line');
+      const reticleBox = document.getElementById('reticle-box');
+      const reticlePill = document.getElementById('reticle-status-pill');
+      const guideText = document.getElementById('guide-text');
+      const guideIcon = document.getElementById('guide-icon');
+
+      loadingOverlay.classList.add('hidden');
+      successOverlay.classList.add('hidden');
+      errorOverlay.classList.add('hidden');
+
+      if (stateId === 'state-1') {
+        if (showLandmarks) landmarkLayer.classList.remove('opacity-0');
+        laserLine.classList.remove('hidden');
+        reticleBox.classList.remove('hidden');
+        reticlePill.classList.remove('hidden');
+        guideText.textContent = "Position locked • Analyzing facial feature vector";
+        guideIcon.textContent = "face";
+      } else if (stateId === 'state-2') {
+        loadingOverlay.classList.remove('hidden');
+        laserLine.classList.add('hidden');
+        reticleBox.classList.add('hidden');
+        guideText.textContent = "Querying institutional biometric registry...";
+        guideIcon.textContent = "sync";
+      } else if (stateId === 'state-3') {
+        successOverlay.classList.remove('hidden');
+        laserLine.classList.add('hidden');
+        guideText.textContent = "Biometric Match Confirmed • Attendance Logged";
+        guideIcon.textContent = "verified";
+      } else if (stateId === 'state-4') {
+        errorOverlay.classList.remove('hidden');
+        laserLine.classList.add('hidden');
+        guideText.textContent = "Verification Failed • Sub-threshold alignment";
+        guideIcon.textContent = "error";
+      }
+    }
+
+    function toggleLandmarks() {
+      showLandmarks = !showLandmarks;
+      const layer = document.getElementById('landmark-points-layer');
+      if (showLandmarks) {
+        layer.classList.remove('opacity-0');
+      } else {
+        layer.classList.add('opacity-0');
+      }
+      document.getElementById('landmark-toggle-label').textContent = showLandmarks ? "Toggle Landmarks" : "Enable Landmarks";
+    }
+
+    async function toggleWebcam() {
+      const video = document.getElementById('scannerVideo');
+      const portrait = document.getElementById('portraitSubject');
+      const label = document.getElementById('camToggleLabel');
+      const icon = document.getElementById('camToggleIcon');
+
+      if (scannerStream) {
+        scannerStream.getTracks().forEach(t => t.stop());
+        scannerStream = null;
+        video.classList.add('hidden');
+        portrait.classList.remove('hidden');
+        label.textContent = "Start Webcam";
+        icon.textContent = "videocam";
+      } else {
+        try {
+          scannerStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+          video.srcObject = scannerStream;
+          video.classList.remove('hidden');
+          portrait.classList.add('hidden');
+          label.textContent = "Stop Webcam";
+          icon.textContent = "videocam_off";
+        } catch (e) {
+          alert("Webcam could not be opened. Using simulated terminal sensor stream.");
+        }
+      }
+    }
+
+    let isAutoScanning = false;
+    let autoScanTimer = null;
+    let isScanningInProgress = false;
+
+    function toggleAutoScan() {
+      isAutoScanning = !isAutoScanning;
+      const label = document.getElementById('autoScanLabel');
+      const icon = document.getElementById('autoScanIcon');
+      const btn = document.getElementById('btnAutoScan');
+
+      if (isAutoScanning) {
+        label.textContent = "Auto-Scan: ON";
+        btn.classList.replace("bg-surface-container", "bg-tertiary/10");
+        btn.classList.add("border-tertiary/40", "text-tertiary");
+        icon.classList.add("animate-spin");
+        
+        // Auto-start webcam if not already on
+        if (!scannerStream) {
+          toggleWebcam();
+        }
+
+        autoScanTimer = setInterval(() => {
+          if (!isScanningInProgress && scannerStream) {
+            initiateScanCycle(true);
+          }
+        }, 2200);
+      } else {
+        label.textContent = "Auto-Scan: OFF";
+        btn.classList.replace("bg-tertiary/10", "bg-surface-container");
+        btn.classList.remove("border-tertiary/40", "text-tertiary");
+        icon.classList.remove("animate-spin");
+        if (autoScanTimer) {
+          clearInterval(autoScanTimer);
+          autoScanTimer = null;
+        }
+      }
+    }
+
+    async function initiateScanCycle(isSilent = false) {
+      if (isScanningInProgress) return;
+      isScanningInProgress = true;
+
+      const scanBtnText = document.getElementById('btnScanText');
+      if (!isSilent) {
+        switchState('state-2');
+        scanBtnText.textContent = "Matching Vector...";
+      }
+
+      let snapshotBase64 = "";
+      const video = document.getElementById('scannerVideo');
+
+      // Auto start camera if user clicked scan without starting webcam
+      if (!scannerStream) {
+        await toggleWebcam();
+        await new Promise(r => setTimeout(r, 600));
+      }
+
+      if (scannerStream && !video.classList.contains('hidden')) {
+        const canvas = document.getElementById('scannerCaptureCanvas');
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        snapshotBase64 = canvas.toDataURL('image/jpeg', 0.92);
+      }
+
+      try {
+        const res = await fetch('/api/recognize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: snapshotBase64,
+            mark_attendance: true
+          })
+        });
+
+        const data = await res.json();
+        
+        if (data.success && data.name && data.name !== "Unregistered Face") {
+          document.getElementById('successStudentName').textContent = data.name;
+          document.getElementById('successStudentId').textContent = "Student ID: " + (data.user_id || 'Enrolled Student');
+          const timeStr = data.record ? data.record.time : new Date().toLocaleTimeString();
+          const statusSuffix = data.record && data.record.already_marked ? " (Already Checked In)" : " (On Time)";
+          document.getElementById('successTimestamp').textContent = timeStr + statusSuffix;
+          
+          const confStr = (data.confidence || 98.6) + "%";
+          document.getElementById('reticle-confidence-text').textContent = `${data.name.toUpperCase()} • ${confStr} MATCH`;
+          
+          switchState('state-3');
+          prependLiveStreamRow(data.name, timeStr, confStr);
+
+          // If auto-scan is on, return to scan reticle after 2.5s
+          if (isAutoScanning) {
+            setTimeout(() => {
+              if (isAutoScanning) switchState('state-1');
+            }, 2500);
+          }
+        } else if (data.name === "Unregistered Face") {
+          document.getElementById('errorStateTitle').textContent = "Unregistered Face Detected";
+          document.getElementById('errorStateReason').textContent = "This biometric template does not match any registered student in the database. Please enroll in the student portal first.";
+          document.getElementById('reticle-confidence-text').textContent = "UNKNOWN FACE • NOT ENROLLED";
+          switchState('state-4');
+        } else {
+          document.getElementById('errorStateTitle').textContent = "Face Not Detected";
+          document.getElementById('errorStateReason').textContent = data.reason || "No face detected in camera viewport. Ensure good front-facing lighting and face camera directly.";
+          document.getElementById('reticle-confidence-text').textContent = "VIEWPORT EMPTY • NO FACE DETECTED";
+          switchState('state-4');
+        }
+      } catch (err) {
+        document.getElementById('errorStateTitle').textContent = "Connection Error";
+        document.getElementById('errorStateReason').textContent = "Could not communicate with biometric gateway server. Check connection.";
+        switchState('state-4');
+      } finally {
+        scanBtnText.textContent = "Scan & Mark Face";
+        isScanningInProgress = false;
+      }
+    }
+
+    // Keyboard shortcuts: Press 'o' or Space to take attendance (like original test.py)
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.key === 'o' || e.key === 'O' || e.code === 'Space') {
+        e.preventDefault();
+        initiateScanCycle();
+      }
+    });
+
+    function prependLiveStreamRow(name, timeStr, conf) {
+      const emptyMsg = document.getElementById('emptyCheckinMsg');
+      if (emptyMsg) emptyMsg.remove();
+
+      const list = document.getElementById('liveCheckinList');
+      const initials = name.slice(0, 2).toUpperCase();
+      const div = document.createElement('div');
+      div.className = "flex items-center justify-between p-2.5 rounded-xl bg-tertiary/10 border border-tertiary/30 animate-pulse";
+      div.innerHTML = `
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">
+            ${initials}
+          </div>
+          <div class="min-w-0">
+            <span class="text-xs font-bold text-on-surface block truncate">${name}</span>
+            <span class="font-mono text-[10px] text-on-surface-variant block">Verified Record</span>
+          </div>
+        </div>
+        <div class="text-right shrink-0">
+          <span class="font-mono text-xs text-tertiary font-bold block">${timeStr}</span>
+          <span class="text-[10px] text-tertiary font-semibold">${conf}</span>
+        </div>
+      `;
+      list.prepend(div);
+      setTimeout(() => div.classList.remove('animate-pulse'), 2000);
+    }
+
+    function openManualModal() {
+      document.getElementById('manualTime').value = new Date().toLocaleTimeString();
+      document.getElementById('manualModal').classList.remove('hidden');
+    }
+
+    function closeManualModal() {
+      document.getElementById('manualModal').classList.add('hidden');
+    }
+
+    document.getElementById('manualStudentSelect').addEventListener('change', function() {
+      const customBox = document.getElementById('customNameBox');
+      if (this.value === 'Custom') {
+        customBox.classList.remove('hidden');
+      } else {
+        customBox.classList.add('hidden');
+      }
+    });
+
+    async function handleManualSubmit(e) {
+      e.preventDefault();
+      const select = document.getElementById('manualStudentSelect');
+      let name = select.value;
+      if (name === 'Custom') {
+        name = document.getElementById('manualCustomName').value.trim();
+      }
+      if (!name) {
+        alert("Please select or type a student name.");
+        return;
+      }
+
+      const timeStr = document.getElementById('manualTime').value.trim() || new Date().toLocaleTimeString();
+
+      try {
+        const res = await fetch('/api/mark_attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name, time: timeStr })
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeManualModal();
+          prependLiveStreamRow(name, timeStr, "100% (Manual)");
+        }
+      } catch (err) {
+        alert("Failed to mark attendance: " + err);
+      }
+    }
+  </script>
+</body>
+</html>

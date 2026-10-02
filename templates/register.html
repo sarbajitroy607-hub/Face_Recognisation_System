@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Student Biometric Enrollment &bull; AttendAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+    }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#0037b0",
+            "primary-container": "#1d4ed8",
+            "on-primary": "#ffffff",
+            "secondary": "#006398",
+            "secondary-container": "#5bb8fe",
+            "on-secondary": "#ffffff",
+            "tertiary": "#004f35",
+            "tertiary-container": "#006a48",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary-fixed-dim": "#4edea3",
+            "surface": "#faf8ff",
+            "surface-dim": "#d2d9f4",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2f3ff",
+            "surface-container": "#eaedff",
+            "surface-container-high": "#e2e7ff",
+            "surface-variant": "#dae2fd",
+            "on-surface": "#131b2e",
+            "on-surface-variant": "#434655",
+            "inverse-surface": "#283044",
+            "inverse-on-surface": "#eef0ff",
+            "outline": "#747686",
+            "outline-variant": "#c4c5d7",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-surface font-sans text-on-surface min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
+  
+  <!-- Toast Notification -->
+  <div class="fixed top-6 right-6 z-50 transform -translate-y-24 opacity-0 transition-all duration-300 pointer-events-none max-w-sm w-full bg-surface-container-lowest shadow-2xl rounded-2xl p-4 flex items-start gap-3 border border-tertiary/20" id="enrollmentToast">
+    <div class="w-9 h-9 rounded-full bg-tertiary/10 flex items-center justify-center shrink-0">
+      <span class="material-symbols-outlined text-tertiary text-xl" style="font-variation-settings: 'FILL' 1;">verified</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <p class="font-bold text-sm text-on-surface">Registration Submitted</p>
+      <p class="text-xs text-on-surface-variant mt-0.5" id="toast-message">Biometric vector encrypted and verified into university registry.</p>
+    </div>
+    <button class="text-on-surface-variant hover:text-on-surface p-1" onclick="closeToast()" type="button">
+      <span class="material-symbols-outlined text-sm">close</span>
+    </button>
+  </div>
+
+  <main class="w-full max-w-2xl mx-auto my-auto">
+    <div class="flex flex-col w-full">
+      
+      <!-- Header & Stage Navigator -->
+      <div class="w-full mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+            <span class="font-mono text-xs uppercase text-secondary tracking-widest font-semibold">Kiosk Node // CAM-SEC-04</span>
+          </div>
+          <span class="font-mono text-xs text-on-surface-variant bg-surface-container px-2.5 py-0.5 rounded-full border border-outline-variant/30">SESSION: ACTIVE</span>
+        </div>
+        
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">Student Enrollment</h1>
+            <p class="text-sm text-on-surface-variant mt-0.5">Biometric facial registration &amp; account creation</p>
+          </div>
+          <a href="/login" class="text-xs text-primary font-semibold hover:underline flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+            Back to Login
+          </a>
+        </div>
+
+        <!-- Guided 2-Step Stepper -->
+        <div class="mt-5 bg-surface-container-low p-1.5 rounded-2xl flex items-center justify-between gap-2 border border-outline-variant/30">
+          <button class="flex-1 flex items-center gap-3 py-2 px-3 rounded-xl transition text-left bg-surface-container-lowest shadow-sm" id="tabStep1" onclick="switchStep(1)" type="button">
+            <div class="w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0" id="stepBadge1">1</div>
+            <div class="min-w-0">
+              <p class="font-bold text-xs text-on-surface truncate">Academic Profile</p>
+              <p class="font-mono text-[10px] text-on-surface-variant hidden sm:block">Identity &amp; Credentials</p>
+            </div>
+          </button>
+          
+          <div class="h-0.5 w-6 bg-surface-variant shrink-0"></div>
+          
+          <button class="flex-1 flex items-center gap-3 py-2 px-3 rounded-xl transition text-left bg-transparent hover:bg-surface-container" id="tabStep2" onclick="switchStep(2)" type="button">
+            <div class="w-7 h-7 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center font-bold text-xs shrink-0" id="stepBadge2">2</div>
+            <div class="min-w-0">
+              <p class="font-bold text-xs text-on-surface truncate">Biometric Vector</p>
+              <p class="font-mono text-[10px] text-on-surface-variant hidden sm:block">Facial Landmarks</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Registration Form -->
+      <form class="w-full flex flex-col gap-6" id="enrollmentForm" novalidate onsubmit="handleRegistration(event)">
+        
+        <!-- Interactive Inline Error Alert Banner -->
+        <div id="formErrorBanner" class="hidden p-4 rounded-2xl bg-error-container text-on-error-container border border-error/30 text-xs font-semibold flex items-center justify-between gap-3 shadow-md transition-all duration-300">
+          <div class="flex items-center gap-2.5">
+            <span class="material-symbols-outlined text-xl text-error shrink-0" style="font-variation-settings: 'FILL' 1;">error</span>
+            <span id="formErrorMessage">Please correct the highlighted errors.</span>
+          </div>
+          <button type="button" onclick="hideErrorBanner()" class="text-on-error-container hover:opacity-75 p-1 rounded-lg shrink-0">
+            <span class="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+
+        <!-- STEP 1 PANEL: Academic & Personal Details -->
+        <div class="flex flex-col gap-4" id="panelStep1">
+          <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col gap-4">
+            <div class="flex items-center justify-between pb-2 border-b border-surface-container">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">school</span>
+                <span class="text-base text-on-surface font-bold">Academic Identity</span>
+              </div>
+              <span class="font-mono text-[11px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">SECTION 1.0</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+              <!-- Full Name -->
+              <div class="flex flex-col gap-1">
+                <label class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold flex items-center justify-between">
+                  Full Legal Name <span class="text-error">*</span>
+                </label>
+                <div class="relative flex items-center">
+                  <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">badge</span>
+                  <input id="regName" class="w-full bg-surface-container-low text-on-surface text-sm pl-10 pr-3 py-2.5 rounded-xl outline-none focus:bg-surface-container-lowest border border-transparent focus:border-primary transition" placeholder="e.g. Sarbajit Roy" required="" type="text"/>
+                </div>
+              </div>
+
+              <!-- Student ID & University Email -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold flex items-center justify-between">
+                    Roll Number / Student ID <span class="text-error">*</span>
+                  </label>
+                  <div class="relative flex items-center">
+                    <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">tag</span>
+                    <input id="regId" class="w-full bg-surface-container-low text-on-surface font-mono text-sm pl-10 pr-3 py-2.5 rounded-xl outline-none focus:bg-surface-container-lowest border border-transparent focus:border-primary transition" placeholder="e.g. 24IUT0010235" required="" type="text"/>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold flex items-center justify-between">
+                    University / Personal Email <span class="text-error">*</span>
+                  </label>
+                  <div class="relative flex items-center">
+                    <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">mail</span>
+                    <input id="regEmail" class="w-full bg-surface-container-low text-on-surface text-sm pl-10 pr-3 py-2.5 rounded-xl outline-none focus:bg-surface-container-lowest border border-transparent focus:border-primary transition" placeholder="name@email.com" required="" type="email"/>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Phone Number -->
+              <div class="flex flex-col gap-1">
+                <label class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Phone Number</label>
+                <div class="relative flex items-center">
+                  <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">call</span>
+                  <input id="regPhone" class="w-full bg-surface-container-low text-on-surface text-sm pl-10 pr-3 py-2.5 rounded-xl outline-none focus:bg-surface-container-lowest border border-transparent focus:border-primary transition" placeholder="e.g. 9876543210" type="tel"/>
+                </div>
+              </div>
+
+              <!-- Department & Degree -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Department</label>
+                  <select id="regDept" class="w-full bg-surface-container-low text-on-surface text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-surface-container-lowest border border-transparent focus:border-primary transition cursor-pointer">
+                    <option value="Computer Science & Engineering">Computer Science &amp; Engineering</option>
+                    <option value="Electronics & Communication">Electronics &amp; Communication</option>
+                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Biotechnology">Biotechnology</option>
+                  </select>
+                </div>
+
+                <div class="flex flex-col gap-1">
+                  <label class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Degree / Course</label>
+                  <select id="regDegree" class="w-full bg-surface-container-low text-on-surface text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-surface-container-lowest border border-transparent focus:border-primary transition cursor-pointer">
+                    <option value="B.Tech Computer Science">B.Tech Computer Science</option>
+                    <option value="M.Tech AI & Data Science">M.Tech AI &amp; Data Science</option>
+                    <option value="B.Sc Information Tech">B.Sc Information Tech</option>
+                    <option value="Bachelor of Computer Apps">Bachelor of Computer Apps</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Current Semester -->
+              <div class="flex flex-col gap-1">
+                <label class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Current Academic Term</label>
+                <select id="regTerm" class="w-full bg-surface-container-low text-on-surface text-xs px-3 py-2.5 rounded-xl outline-none focus:bg-surface-container-lowest border border-transparent focus:border-primary transition cursor-pointer">
+                  <option value="Semester 6 (Spring 2025)">Semester 6 (Spring 2025)</option>
+                  <option value="Semester 5 (Fall 2024)">Semester 5 (Fall 2024)</option>
+                  <option value="Semester 4 (Spring 2024)">Semester 4 (Spring 2024)</option>
+                  <option value="Semester 3 (Fall 2023)">Semester 3 (Fall 2023)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password & Security Card -->
+          <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col gap-4">
+            <div class="flex items-center justify-between pb-2 border-b border-surface-container">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">shield</span>
+                <span class="text-base text-on-surface font-bold">Security Credentials</span>
+              </div>
+              <span class="font-mono text-[11px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded">SECTION 1.1</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="flex flex-col gap-1">
+                <label class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Account Password</label>
+                <div class="relative flex items-center">
+                  <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">lock</span>
+                  <input class="w-full bg-surface-container-low text-on-surface font-mono text-sm pl-10 pr-3 py-2.5 rounded-xl outline-none focus:bg-surface-container-lowest border border-transparent focus:border-primary transition" id="pwdInput" oninput="validatePassword()" placeholder="••••••••••••" required="" type="password"/>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <label class="text-xs text-on-surface-variant uppercase tracking-wider font-semibold">Confirm Password</label>
+                <div class="relative flex items-center">
+                  <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-lg pointer-events-none">lock_reset</span>
+                  <input class="w-full bg-surface-container-low text-on-surface font-mono text-sm pl-10 pr-3 py-2.5 rounded-xl outline-none focus:bg-surface-container-lowest border border-transparent focus:border-primary transition" id="pwdConfirm" oninput="validatePassword()" placeholder="••••••••••••" required="" type="password"/>
+                </div>
+              </div>
+            </div>
+
+            <!-- Password Validation Checklist -->
+            <div class="bg-surface-container-low p-3 rounded-xl flex flex-col gap-1.5 border border-outline-variant/30">
+              <span class="text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">Validation Rules</span>
+              <div class="grid grid-cols-2 gap-2 mt-1">
+                <div class="flex items-center gap-1.5 text-on-surface-variant text-xs" id="chkLen">
+                  <span class="material-symbols-outlined text-sm text-outline-variant">radio_button_unchecked</span>
+                  <span>8+ Characters</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-on-surface-variant text-xs" id="chkNum">
+                  <span class="material-symbols-outlined text-sm text-outline-variant">radio_button_unchecked</span>
+                  <span>Includes Number</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-on-surface-variant text-xs" id="chkUpper">
+                  <span class="material-symbols-outlined text-sm text-outline-variant">radio_button_unchecked</span>
+                  <span>Uppercase Letter</span>
+                </div>
+                <div class="flex items-center gap-1.5 text-on-surface-variant text-xs" id="chkMatch">
+                  <span class="material-symbols-outlined text-sm text-outline-variant">radio_button_unchecked</span>
+                  <span>Passwords Match</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+              <button class="w-full sm:w-auto bg-primary text-on-primary font-bold text-sm px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-md hover:bg-primary-container transition cursor-pointer" onclick="goToStep2()" type="button">
+                <span>Proceed to Biometric Capture</span>
+                <span class="material-symbols-outlined text-lg">arrow_forward</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2 PANEL: Face Biometric Enrollment -->
+        <div class="flex flex-col gap-4 hidden" id="panelStep2">
+          
+          <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline-variant/30 flex flex-col gap-4">
+            <div class="flex items-center justify-between pb-2 border-b border-surface-container">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-secondary text-xl">center_focus_strong</span>
+                <span class="text-base text-on-surface font-bold">Facial Template Enrollment</span>
+              </div>
+              <span class="font-mono text-xs text-tertiary-container bg-tertiary-fixed px-2.5 py-0.5 rounded-full font-semibold">OPTICAL READY</span>
+            </div>
+
+            <!-- Capture / Preview Frame -->
+            <div class="relative w-full aspect-square max-w-[340px] mx-auto rounded-2xl overflow-hidden bg-inverse-surface shadow-xl flex items-center justify-center border-2 border-secondary-container/30">
+              
+              <!-- Live Video Stream -->
+              <video id="webcamVideo" autoplay playsinline muted class="absolute inset-0 w-full h-full object-cover hidden"></video>
+              
+              <!-- Captured Frame Canvas -->
+              <canvas id="captureCanvas" class="hidden"></canvas>
+              
+              <!-- Captured Photo Preview -->
+              <img id="previewPhoto" alt="Captured Frame" class="absolute inset-0 w-full h-full object-cover hidden"/>
+              
+              <!-- Default Biometric Placeholder -->
+              <div id="scannerPlaceholder" class="flex flex-col items-center justify-center text-center p-6 text-inverse-on-surface">
+                <div class="w-20 h-20 rounded-full bg-secondary-container/10 border-2 border-dashed border-secondary-container flex items-center justify-center mb-3">
+                  <span class="material-symbols-outlined text-4xl text-secondary-container">person</span>
+                </div>
+                <span class="text-sm font-bold text-inverse-on-surface">No Face Frame Captured</span>
+                <p class="text-xs text-surface-variant/70 mt-1 max-w-xs">
+                  Click <strong>"Start Camera"</strong> below to capture your face, or <strong>"Upload Photo"</strong>.
+                </p>
+              </div>
+
+              <!-- HUD Geometric Reticle Overlay -->
+              <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                <div class="w-56 h-56 rounded-full border-2 border-dashed border-secondary-container/60 flex items-center justify-center animate-pulse">
+                  <div class="w-3 h-3 rounded-full bg-secondary-container/60"></div>
+                </div>
+                <div class="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-secondary-container"></div>
+                <div class="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-secondary-container"></div>
+                <div class="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-secondary-container"></div>
+                <div class="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-secondary-container"></div>
+                <div class="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-secondary-container to-transparent shadow-[0_0_12px_rgba(91,184,254,0.9)] animate-bounce"></div>
+              </div>
+
+              <!-- Bottom Live Confidence Pill Over Image -->
+              <div class="absolute bottom-3 inset-x-3 bg-inverse-surface/85 backdrop-blur-sm rounded-xl px-3 py-1.5 flex items-center justify-between text-inverse-on-surface border border-white/10">
+                <span class="font-mono text-[10px] flex items-center gap-1.5 text-tertiary-fixed font-semibold" id="captureStatusText">
+                  <span class="w-2 h-2 rounded-full bg-tertiary-fixed animate-ping"></span>
+                  SENSOR ACTIVE
+                </span>
+                <span class="font-mono text-[10px] text-secondary-fixed">7500-D VECTOR</span>
+              </div>
+            </div>
+
+            <p class="text-xs text-on-surface-variant text-center px-4">
+              Ensure good lighting, front-facing pose, and no sunglasses.
+            </p>
+
+            <!-- Capture & Upload Action Bar -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <button id="btnCamera" class="bg-surface-container-low hover:bg-surface-container text-on-surface font-semibold text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition border border-outline-variant/30 cursor-pointer" type="button" onclick="toggleCamera()">
+                <span class="material-symbols-outlined text-base text-secondary" id="camIcon">videocam</span>
+                <span id="camLabel">Start Camera</span>
+              </button>
+
+              <button id="btnSnapPhoto" class="hidden bg-tertiary text-on-primary font-bold text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer hover:bg-tertiary-container" type="button" onclick="capturePhoto()">
+                <span class="material-symbols-outlined text-base">photo_camera</span>
+                <span>Capture Face</span>
+              </button>
+              
+              <label class="bg-surface-container-low hover:bg-surface-container text-on-surface font-semibold text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition border border-outline-variant/30 cursor-pointer">
+                <span class="material-symbols-outlined text-base text-primary">upload_file</span>
+                <span>Upload Photo</span>
+                <input accept="image/*" class="hidden" type="file" id="fileUpload" onchange="handleFileUpload(event)"/>
+              </label>
+
+              <button id="btnDemoFace" class="bg-surface-container-low hover:bg-surface-container text-on-surface font-semibold text-xs py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition border border-outline-variant/30 cursor-pointer" type="button" onclick="loadDemoFace()">
+                <span class="material-symbols-outlined text-base text-secondary">sentiment_satisfied</span>
+                <span>Use Demo Face</span>
+              </button>
+            </div>
+
+            <!-- Face Verification Status Banner -->
+            <div id="faceStatusBanner" class="hidden p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 border">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-base" id="faceStatusIcon">verified</span>
+                <span id="faceStatusText">Face verified and ready for enrollment!</span>
+              </div>
+              <button type="button" onclick="retakePhoto()" class="text-[11px] underline font-bold cursor-pointer" id="faceRetakeBtn">Retake</button>
+            </div>
+
+            <!-- Consent & Agreement Card -->
+            <div class="bg-surface-container-low p-3 rounded-xl flex flex-col gap-2 border border-outline-variant/30">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-base">policy</span>
+                <span class="text-xs text-on-surface font-bold">Institutional Compliance &amp; Consent</span>
+              </div>
+              <label class="flex items-start gap-2.5 cursor-pointer select-none">
+                <input class="mt-0.5 w-4 h-4 rounded text-primary accent-primary cursor-pointer shrink-0" id="consentCheckbox" required="" type="checkbox"/>
+                <span class="text-xs text-on-surface-variant leading-relaxed">
+                  I consent to the capture, algorithmic feature extraction, and encrypted biometric storage of my facial template strictly for university attendance verification.
+                </span>
+              </label>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+              <button class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-surface-container text-on-surface font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition cursor-pointer" onclick="switchStep(1)" type="button">
+                <span class="material-symbols-outlined text-sm">arrow_back</span>
+                <span>Edit Academic Profile</span>
+              </button>
+
+              <button class="w-full sm:w-auto bg-primary text-on-primary font-bold text-sm px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:bg-primary-container active:scale-[0.99] transition cursor-pointer" id="btnSubmitRegistration" type="submit">
+                <span id="btnRegText">Complete Registration &amp; Enroll</span>
+                <span class="material-symbols-outlined text-lg" id="btnRegIcon">how_to_reg</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </form>
+
+    </div>
+  </main>
+
+  <script>
+    let currentStep = 1;
+    let cameraStream = null;
+    let capturedImageBase64 = "";
+
+    function showErrorBanner(message) {
+      const banner = document.getElementById('formErrorBanner');
+      const msgEl = document.getElementById('formErrorMessage');
+      if (banner && msgEl) {
+        msgEl.innerHTML = message;
+        banner.classList.remove('hidden');
+        banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function hideErrorBanner() {
+      const banner = document.getElementById('formErrorBanner');
+      if (banner) {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function validateStep1(focusFirst = true) {
+      hideErrorBanner();
+      const name = document.getElementById('regName').value.trim();
+      const id = document.getElementById('regId').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pwd = document.getElementById('pwdInput').value;
+      const pwd2 = document.getElementById('pwdConfirm').value;
+
+      if (!name) {
+        showErrorBanner("Please enter your <strong>Full Legal Name</strong>.");
+        if (focusFirst) document.getElementById('regName').focus();
+        return false;
+      }
+      if (!id) {
+        showErrorBanner("Please enter your <strong>Roll Number / Student ID</strong>.");
+        if (focusFirst) document.getElementById('regId').focus();
+        return false;
+      }
+      if (!email) {
+        showErrorBanner("Please enter your <strong>University or Personal Email</strong>.");
+        if (focusFirst) document.getElementById('regEmail').focus();
+        return false;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showErrorBanner("Please provide a valid email format (e.g. name@univ.edu).");
+        if (focusFirst) document.getElementById('regEmail').focus();
+        return false;
+      }
+      if (pwd.length < 8) {
+        showErrorBanner("Password must be at least <strong>8 characters long</strong>.");
+        if (focusFirst) document.getElementById('pwdInput').focus();
+        return false;
+      }
+      if (!/\d/.test(pwd)) {
+        showErrorBanner("Password must contain at least <strong>one number</strong>.");
+        if (focusFirst) document.getElementById('pwdInput').focus();
+        return false;
+      }
+      if (!/[A-Z]/.test(pwd)) {
+        showErrorBanner("Password must contain at least <strong>one uppercase letter</strong>.");
+        if (focusFirst) document.getElementById('pwdInput').focus();
+        return false;
+      }
+      if (pwd !== pwd2) {
+        showErrorBanner("Passwords do not match. Please re-type your confirm password.");
+        if (focusFirst) document.getElementById('pwdConfirm').focus();
+        return false;
+      }
+
+      return true;
+    }
+
+    function switchStep(step) {
+      if (step === 2) {
+        if (!validateStep1(true)) {
+          return;
+        }
+      }
+
+      currentStep = step;
+      const tab1 = document.getElementById('tabStep1');
+      const tab2 = document.getElementById('tabStep2');
+      const badge1 = document.getElementById('stepBadge1');
+      const badge2 = document.getElementById('stepBadge2');
+      const panel1 = document.getElementById('panelStep1');
+      const panel2 = document.getElementById('panelStep2');
+
+      if (step === 1) {
+        tab1.className = "flex-1 flex items-center gap-3 py-2 px-3 rounded-xl transition text-left bg-surface-container-lowest shadow-sm";
+        tab2.className = "flex-1 flex items-center gap-3 py-2 px-3 rounded-xl transition text-left bg-transparent hover:bg-surface-container";
+        badge1.className = "w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0";
+        badge2.className = "w-7 h-7 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center font-bold text-xs shrink-0";
+        panel1.classList.remove('hidden');
+        panel2.classList.add('hidden');
+      } else {
+        tab1.className = "flex-1 flex items-center gap-3 py-2 px-3 rounded-xl transition text-left bg-transparent hover:bg-surface-container";
+        tab2.className = "flex-1 flex items-center gap-3 py-2 px-3 rounded-xl transition text-left bg-surface-container-lowest shadow-sm";
+        badge1.className = "w-7 h-7 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center font-bold text-xs shrink-0";
+        badge2.className = "w-7 h-7 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0";
+        panel1.classList.add('hidden');
+        panel2.classList.remove('hidden');
+      }
+    }
+
+    function goToStep2() {
+      if (validateStep1(true)) {
+        switchStep(2);
+      }
+    }
+
+    function validatePassword() {
+      const p1 = document.getElementById('pwdInput').value;
+      const p2 = document.getElementById('pwdConfirm').value;
+
+      const hasLen = p1.length >= 8;
+      const hasNum = /\d/.test(p1);
+      const hasUpper = /[A-Z]/.test(p1);
+      const hasMatch = p1.length > 0 && p1 === p2;
+
+      updateRule('chkLen', hasLen);
+      updateRule('chkNum', hasNum);
+      updateRule('chkUpper', hasUpper);
+      updateRule('chkMatch', hasMatch);
+    }
+
+    function updateRule(elementId, isValid) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const icon = el.querySelector('.material-symbols-outlined');
+      if (isValid) {
+        el.className = "flex items-center gap-1.5 text-tertiary text-xs font-semibold";
+        icon.textContent = "check_circle";
+        icon.className = "material-symbols-outlined text-sm text-tertiary";
+      } else {
+        el.className = "flex items-center gap-1.5 text-on-surface-variant text-xs";
+        icon.textContent = "radio_button_unchecked";
+        icon.className = "material-symbols-outlined text-sm text-outline-variant";
+      }
+    }
+
+    async function toggleCamera() {
+      const video = document.getElementById('webcamVideo');
+      const preview = document.getElementById('previewPhoto');
+      const placeholder = document.getElementById('scannerPlaceholder');
+      const camLabel = document.getElementById('camLabel');
+      const camIcon = document.getElementById('camIcon');
+      const snapBtn = document.getElementById('btnSnapPhoto');
+      const statusText = document.getElementById('captureStatusText');
+
+      if (cameraStream) {
+        stopCamera();
+      } else {
+        try {
+          cameraStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+          video.srcObject = cameraStream;
+          video.classList.remove('hidden');
+          preview.classList.add('hidden');
+          placeholder.classList.add('hidden');
+          camLabel.textContent = "Stop Camera";
+          camIcon.textContent = "videocam_off";
+          snapBtn.classList.remove('hidden');
+          statusText.innerHTML = '<span class="w-2 h-2 rounded-full bg-tertiary-fixed animate-ping"></span> LIVE CAMERA STREAM';
+        } catch (err) {
+          showErrorBanner("Camera could not be accessed. You can upload a photo using <strong>'Upload Photo'</strong> or click <strong>'Use Demo Face'</strong>.");
+        }
+      }
+    }
+
+    function stopCamera() {
+      const video = document.getElementById('webcamVideo');
+      const camLabel = document.getElementById('camLabel');
+      const camIcon = document.getElementById('camIcon');
+      const snapBtn = document.getElementById('btnSnapPhoto');
+
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+      video.classList.add('hidden');
+      camLabel.textContent = "Start Camera";
+      camIcon.textContent = "videocam";
+      snapBtn.classList.add('hidden');
+    }
+
+    async function capturePhoto() {
+      const video = document.getElementById('webcamVideo');
+      const preview = document.getElementById('previewPhoto');
+      const placeholder = document.getElementById('scannerPlaceholder');
+      const statusText = document.getElementById('captureStatusText');
+
+      const canvas = document.getElementById('captureCanvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      capturedImageBase64 = canvas.toDataURL('image/jpeg', 0.95);
+
+      preview.src = capturedImageBase64;
+      preview.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+      stopCamera();
+
+      statusText.innerHTML = '<span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span> VERIFYING FACE...';
+      await verifyCapturedFace(capturedImageBase64);
+    }
+
+    function retakePhoto() {
+      capturedImageBase64 = "";
+      document.getElementById('previewPhoto').classList.add('hidden');
+      document.getElementById('scannerPlaceholder').classList.remove('hidden');
+      document.getElementById('faceStatusBanner').classList.add('hidden');
+      document.getElementById('captureStatusText').innerHTML = '<span class="w-2 h-2 rounded-full bg-tertiary-fixed"></span> READY';
+      toggleCamera();
+    }
+
+    async function verifyCapturedFace(b64) {
+      const banner = document.getElementById('faceStatusBanner');
+      const statusText = document.getElementById('captureStatusText');
+      const bannerText = document.getElementById('faceStatusText');
+      const bannerIcon = document.getElementById('faceStatusIcon');
+
+      banner.classList.remove('hidden');
+      bannerText.textContent = "Analyzing facial structure & landmarks...";
+      banner.className = "p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 border bg-surface-container text-on-surface border-outline-variant/30";
+
+      try {
+        const res = await fetch('/api/verify_face', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: b64 })
+        });
+        const d = await res.json();
+        if (d.success && d.face_detected) {
+          banner.className = "p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 border bg-tertiary/10 text-tertiary border-tertiary/30";
+          bannerIcon.textContent = "check_circle";
+          bannerText.textContent = "Face verified! Optical alignment optimal (100 feature vectors ready).";
+          statusText.innerHTML = '<span class="w-2 h-2 rounded-full bg-tertiary-fixed"></span> FACE VERIFIED';
+          hideErrorBanner();
+        } else {
+          banner.className = "p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 border bg-error-container text-on-error-container border-error/30";
+          bannerIcon.textContent = "warning";
+          bannerText.textContent = d.message || "No face detected in photo. Please retake with better lighting.";
+          statusText.innerHTML = '<span class="w-2 h-2 rounded-full bg-error"></span> NO FACE DETECTED';
+        }
+      } catch (e) {
+        banner.className = "p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 border bg-surface-container text-on-surface";
+        bannerText.textContent = "Photo captured and stored.";
+      }
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          capturedImageBase64 = e.target.result;
+          const preview = document.getElementById('previewPhoto');
+          preview.src = capturedImageBase64;
+          preview.classList.remove('hidden');
+          document.getElementById('scannerPlaceholder').classList.add('hidden');
+          stopCamera();
+          await verifyCapturedFace(capturedImageBase64);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function loadDemoFace() {
+      try {
+        const res = await fetch('/api/sample_face');
+        const data = await res.json();
+        if (data.success && data.image) {
+          capturedImageBase64 = data.image;
+          const preview = document.getElementById('previewPhoto');
+          preview.src = capturedImageBase64;
+          preview.classList.remove('hidden');
+          document.getElementById('scannerPlaceholder').classList.add('hidden');
+          stopCamera();
+          await verifyCapturedFace(capturedImageBase64);
+          showToast("Demo biometric face loaded!");
+        } else {
+          showErrorBanner("Could not load demo face: " + (data.message || "Unknown error"));
+        }
+      } catch (err) {
+        showErrorBanner("Error loading demo face: " + err);
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('enrollmentToast');
+      const msgEl = document.getElementById('toast-message');
+      if (message) msgEl.textContent = message;
+      toast.classList.remove('-translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+    }
+
+    function closeToast() {
+      const toast = document.getElementById('enrollmentToast');
+      toast.classList.remove('translate-y-0', 'opacity-100');
+      toast.classList.add('-translate-y-24', 'opacity-0');
+    }
+
+    async function handleRegistration(e) {
+      if (e) e.preventDefault();
+      hideErrorBanner();
+
+      // 1. Verify Step 1 fields
+      if (!validateStep1(true)) {
+        switchStep(1);
+        return;
+      }
+
+      // 2. Verify Consent
+      const consent = document.getElementById('consentCheckbox').checked;
+      if (!consent) {
+        showErrorBanner("<strong>Institutional Consent required:</strong> Please check the consent agreement box below.");
+        document.getElementById('consentCheckbox').focus();
+        return;
+      }
+
+      // 3. Auto-snap from camera if streaming
+      if (cameraStream && !capturedImageBase64) {
+        const video = document.getElementById('webcamVideo');
+        if (video.videoWidth > 0 && video.readyState >= 2) {
+          const canvas = document.getElementById('captureCanvas');
+          canvas.width = video.videoWidth || 640;
+          canvas.height = video.videoHeight || 480;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          capturedImageBase64 = canvas.toDataURL('image/jpeg', 0.95);
+          stopCamera();
+        } else {
+          showErrorBanner("Camera stream is warming up. Please click <strong>'Capture Face'</strong> or <strong>'Use Demo Face'</strong>.");
+          return;
+        }
+      }
+
+      // 4. Verify Biometric Face
+      if (!capturedImageBase64) {
+        showErrorBanner("<strong>Biometric Face Photo Required:</strong> Please click <strong>'Start Camera'</strong> and <strong>'Capture Face'</strong>, <strong>'Upload Photo'</strong>, or <strong>'Use Demo Face'</strong>.");
+        switchStep(2);
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmitRegistration');
+      const btnText = document.getElementById('btnRegText');
+      const btnIcon = document.getElementById('btnRegIcon');
+
+      btnText.textContent = "Extracting Facial Vectors...";
+      btnIcon.textContent = "sync";
+      btnIcon.classList.add('animate-spin');
+      btn.disabled = true;
+
+      const payload = {
+        fullName: document.getElementById('regName').value.trim(),
+        studentId: document.getElementById('regId').value.trim(),
+        email: document.getElementById('regEmail').value.trim(),
+        phone: document.getElementById('regPhone').value.trim(),
+        department: document.getElementById('regDept').value,
+        degree: document.getElementById('regDegree').value,
+        term: document.getElementById('regTerm').value,
+        password: document.getElementById('pwdInput').value,
+        faceImage: capturedImageBase64
+      };
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message || "Account registered successfully.");
+          btnText.textContent = "Biometric Enrolled!";
+          btnIcon.textContent = "check_circle";
+          btnIcon.classList.remove('animate-spin');
+          btn.classList.replace("bg-primary", "bg-tertiary");
+
+          setTimeout(() => {
+            window.location.href = data.redirect || '/dashboard';
+          }, 1000);
+        } else {
+          showErrorBanner(data.message || "Registration failed. Please check your information and try again.");
+          btnText.textContent = "Complete Registration & Enroll";
+          btnIcon.textContent = "how_to_reg";
+          btnIcon.classList.remove('animate-spin');
+          btn.disabled = false;
+        }
+      } catch (err) {
+        showErrorBanner("Network error occurred during enrollment: " + err);
+        btnText.textContent = "Complete Registration & Enroll";
+        btnIcon.textContent = "how_to_reg";
+        btnIcon.classList.remove('animate-spin');
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

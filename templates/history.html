@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Attendance Database Ledger &bull; AttendAI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+    }
+  </style>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#0037b0",
+            "primary-container": "#1d4ed8",
+            "on-primary": "#ffffff",
+            "secondary": "#006398",
+            "secondary-container": "#5bb8fe",
+            "on-secondary": "#ffffff",
+            "tertiary": "#004f35",
+            "tertiary-container": "#006a48",
+            "tertiary-fixed": "#6ffbbe",
+            "surface": "#faf8ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2f3ff",
+            "surface-container": "#eaedff",
+            "surface-container-high": "#e2e7ff",
+            "surface-variant": "#dae2fd",
+            "on-surface": "#131b2e",
+            "on-surface-variant": "#434655",
+            "inverse-surface": "#283044",
+            "inverse-on-surface": "#eef0ff",
+            "outline": "#747686",
+            "outline-variant": "#c4c5d7",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a"
+          },
+          fontFamily: {
+            sans: ["Plus Jakarta Sans", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-surface font-sans text-on-surface min-h-screen">
+  
+  <!-- Header -->
+  <header class="fixed top-0 left-0 right-0 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="h-16 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none" class="w-7 h-7">
+              <path d="M10 16V13C10 11.3431 11.3431 10 13 10H16" stroke="#93C5FD" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M24 10H27C28.6569 10 30 11.3431 30 13V16" stroke="#93C5FD" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M30 24V27C30 28.6569 28.6569 30 27 30H24" stroke="#93C5FD" stroke-width="2.5" stroke-linecap="round"/>
+              <path d="M16 30H13C11.3431 30 10 28.6569 10 27V24" stroke="#93C5FD" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="20" cy="18" r="4.5" fill="#FFFFFF"/>
+              <path d="M14 26.5C14 24.2 16.5 22.5 20 22.5C23.5 22.5 26 24.2 26 26.5" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="28" cy="12" r="2.5" fill="#38BDF8"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-lg font-extrabold tracking-tight text-on-surface leading-tight block">AttendAI</span>
+            <span class="text-[10px] text-on-surface-variant font-medium">Database &amp; Attendance Ledger</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="/api/export_csv?date={{ selected_date }}" class="inline-flex items-center gap-1.5 bg-primary text-on-primary text-xs font-bold px-3.5 py-2 rounded-xl hover:bg-primary-container transition shadow-sm">
+            <span class="material-symbols-outlined text-base">download</span>
+            <span>Export CSV ({{ selected_date }})</span>
+          </a>
+          <div class="flex items-center gap-2 pl-2 py-1 pr-3 rounded-full bg-surface-container-low border border-outline-variant/30">
+            {% if user.avatar %}
+              <img alt="{{ user.name }}" class="w-7 h-7 rounded-full object-cover ring-2 ring-primary/20" src="{{ user.avatar }}"/>
+            {% else %}
+              <div class="w-7 h-7 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center">
+                {{ user.name[:2]|upper }}
+              </div>
+            {% endif %}
+            <span class="text-xs font-bold text-on-surface">{{ user.name }}</span>
+          </div>
+
+          <a href="/api/logout" class="p-2 rounded-xl text-on-surface-variant hover:text-error hover:bg-error-container/30 transition" title="Sign Out">
+            <span class="material-symbols-outlined text-xl">logout</span>
+          </a>
+        </div>
+      </div>
+
+      <nav class="flex items-center gap-1 overflow-x-auto pb-2 pt-1 border-t border-surface-container/60">
+        <a class="px-3.5 py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition rounded-xl text-xs font-semibold whitespace-nowrap" href="/dashboard">Dashboard</a>
+        <a class="px-3.5 py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition rounded-xl text-xs font-semibold whitespace-nowrap" href="/scanner">Mark Attendance (Live Scanner)</a>
+        <a aria-current="page" class="px-3.5 py-1.5 transition rounded-xl bg-primary text-on-primary text-xs font-bold shadow-xs whitespace-nowrap" href="/history">Attendance History &amp; Database</a>
+        <a class="px-3.5 py-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition rounded-xl text-xs font-semibold whitespace-nowrap" href="/register">Enroll New Student</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto pt-32 pb-16 px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col gap-6">
+
+      <!-- Section Title & Database Info -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-outline-variant/30">
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-on-surface">Institutional Attendance Database Ledger</h1>
+          <p class="text-xs text-on-surface-variant mt-0.5">
+            Synchronized with <code class="font-mono bg-surface-container px-2 py-0.5 rounded text-primary">Attendance/Attendance_{{ selected_date }}.csv</code>
+          </p>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-tertiary/10 text-tertiary font-mono text-xs font-bold">
+            <span class="w-2 h-2 rounded-full bg-tertiary"></span>
+            CSV STORAGE ACTIVE
+          </span>
+        </div>
+      </div>
+
+      <!-- Controls: Date Picker, Search Filter, Mode -->
+      <div class="bg-surface-container-lowest p-5 rounded-2xl shadow-sm border border-outline-variant/30 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+        <!-- Date Selector (4 cols) -->
+        <div class="md:col-span-4 flex flex-col gap-1">
+          <label class="text-xs font-bold text-on-surface-variant flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm text-primary">calendar_today</span>
+            <span>Select Attendance Date:</span>
+          </label>
+          <select id="dateSelect" onchange="changeDate(this.value)" class="w-full bg-surface-container-low text-on-surface font-mono text-xs px-3 py-2.5 rounded-xl border border-outline-variant/30 outline-none focus:border-primary cursor-pointer">
+            {% for d in available_dates %}
+              <option value="{{ d }}" {% if d == selected_date %}selected{% endif %}>{{ d }}{% if loop.first %} (Latest / Today){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Search Bar (5 cols) -->
+        <div class="md:col-span-5 flex flex-col gap-1">
+          <label class="text-xs font-bold text-on-surface-variant flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm text-secondary">search</span>
+            <span>Search Attendee Name:</span>
+          </label>
+          <div class="relative flex items-center">
+            <input type="text" id="searchInput" oninput="filterTable()" placeholder="Type student name to filter rows..." class="w-full bg-surface-container-low text-on-surface text-xs pl-9 pr-3 py-2.5 rounded-xl border border-outline-variant/30 outline-none focus:border-primary"/>
+            <span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-base pointer-events-none">person_search</span>
+          </div>
+        </div>
+
+        <!-- View Mode Toggle (3 cols) -->
+        <div class="md:col-span-3 flex flex-col gap-1">
+          <label class="text-xs font-bold text-on-surface-variant flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm text-tertiary">tune</span>
+            <span>View Filter:</span>
+          </label>
+          <div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-outline-variant/30">
+            <button id="btnViewAll" onclick="setViewMode('all')" class="flex-1 py-1.5 rounded-lg text-xs font-bold transition bg-primary text-on-primary shadow-xs">
+              All Check-ins
+            </button>
+            <button id="btnViewUnique" onclick="setViewMode('unique')" class="flex-1 py-1.5 rounded-lg text-xs font-semibold transition text-on-surface-variant hover:text-on-surface">
+              Unique Attendees
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metric Cards for Selected Date -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-2xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30">
+          <span class="text-xs text-on-surface-variant font-semibold">Total Check-ins Logged</span>
+          <div class="text-3xl font-extrabold text-on-surface mt-1" id="statTotal">{{ total_count }}</div>
+          <span class="text-[10px] font-mono text-on-surface-variant">Date: {{ selected_date }}</span>
+        </div>
+        
+        <div class="rounded-2xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30">
+          <span class="text-xs text-on-surface-variant font-semibold">Unique Attendees</span>
+          <div class="text-3xl font-extrabold text-tertiary mt-1" id="statUnique">{{ unique_count }}</div>
+          <span class="text-[10px] text-tertiary font-semibold">Distinct individuals</span>
+        </div>
+
+        <div class="rounded-2xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30">
+          <span class="text-xs text-on-surface-variant font-semibold">Latest Attendee</span>
+          <div class="text-lg font-bold text-primary mt-2 truncate" id="statLatestName">
+            {{ records[-1].name if records else 'None' }}
+          </div>
+          <span class="text-[10px] text-on-surface-variant">Most recent check-in</span>
+        </div>
+
+        <div class="rounded-2xl bg-surface-container-lowest p-5 shadow-sm border border-outline-variant/30">
+          <span class="text-xs text-on-surface-variant font-semibold">Latest Time</span>
+          <div class="text-2xl font-mono font-bold text-on-surface mt-1" id="statLatestTime">
+            {{ records[-1].time if records else '--:--:--' }}
+          </div>
+          <span class="text-[10px] text-on-surface-variant">Verification timestamp</span>
+        </div>
+      </div>
+
+      <!-- Main Records Table & Manual Entry Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Table (8 Cols) -->
+        <div class="lg:col-span-8 rounded-2xl bg-surface-container-lowest p-6 shadow-sm border border-outline-variant/30 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-surface-container">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">table_rows</span>
+                <h2 class="text-base font-bold text-on-surface">Attendance Records ({{ selected_date }})</h2>
+              </div>
+              <span class="font-mono text-xs text-on-surface-variant" id="filteredCountLabel">Showing {{ records|length }} rows</span>
+            </div>
+
+            <div class="overflow-x-auto w-full">
+              <table class="w-full text-left border-collapse" id="historyTable">
+                <thead>
+                  <tr class="bg-surface-container-low text-on-surface-variant text-[11px] uppercase tracking-wider font-bold">
+                    <th class="py-2.5 px-3 rounded-l-xl">No.</th>
+                    <th class="py-2.5 px-3">Student / Attendee Name</th>
+                    <th class="py-2.5 px-3">Check-in Time</th>
+                    <th class="py-2.5 px-3">Calendar Date</th>
+                    <th class="py-2.5 px-3 rounded-r-xl">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-surface-container text-xs" id="historyTableBody">
+                  {% if records %}
+                    {% for rec in records %}
+                      <tr class="hover:bg-surface-container-low transition record-row" data-name="{{ rec.name|lower }}">
+                        <td class="py-3 px-3 font-mono text-on-surface-variant">{{ loop.index }}</td>
+                        <td class="py-3 px-3 whitespace-nowrap">
+                          <div class="font-bold text-on-surface">{{ rec.name }}</div>
+                          <div class="text-[10px] text-on-surface-variant">{{ rec.course }}</div>
+                        </td>
+                        <td class="py-3 px-3 whitespace-nowrap">
+                          <span class="font-mono font-bold text-primary">{{ rec.time }}</span>
+                        </td>
+                        <td class="py-3 px-3 whitespace-nowrap font-mono text-on-surface-variant">
+                          {{ rec.date }}
+                        </td>
+                        <td class="py-3 px-3 whitespace-nowrap">
+                          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/10 text-tertiary text-xs font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                            Verified
+                          </span>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td colspan="5" class="py-12 text-center text-on-surface-variant text-xs">
+                        <span class="material-symbols-outlined text-4xl text-on-surface-variant/40 block mb-2">folder_off</span>
+                        No attendance records found for <strong>{{ selected_date }}</strong>.<br/>
+                        Use the Manual Attendance Entry form on the right or the Webcam Scanner to record check-ins.
+                      </td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual Entry Form (4 Cols) -->
+        <div class="lg:col-span-4 rounded-2xl bg-surface-container-lowest p-6 shadow-sm border border-outline-variant/30 flex flex-col gap-4">
+          <div class="flex items-center gap-2 pb-2 border-b border-surface-container">
+            <span class="material-symbols-outlined text-primary text-xl">add_circle</span>
+            <h3 class="text-sm font-bold text-on-surface">Add Attendance Record</h3>
+          </div>
+          <p class="text-xs text-on-surface-variant">
+            Directly append an authenticated record to today's or selected log file.
+          </p>
+
+          <form id="historyManualForm" onsubmit="handleHistoryManualSubmit(event)" class="flex flex-col gap-3">
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-bold text-on-surface">Select Registered Student</label>
+              <select id="histSelectUser" class="w-full bg-surface-container-low text-on-surface text-xs px-3 py-2.5 rounded-xl border border-outline-variant/30 outline-none focus:border-primary cursor-pointer">
+                <option value="custom">-- Custom Name --</option>
+                {% for u in all_users %}
+                  <option value="{{ u.name }}">{{ u.name }} ({{ u.id }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="flex flex-col gap-1" id="histCustomNameDiv">
+              <label class="text-xs font-bold text-on-surface">Attendee Name</label>
+              <input type="text" id="histCustomName" placeholder="e.g. John Doe" class="w-full bg-surface-container-low text-on-surface text-xs px-3 py-2.5 rounded-xl border border-outline-variant/30 outline-none focus:border-primary"/>
+            </div>
+
+            <div class="flex flex-col gap-1">
+              <label class="text-xs font-bold text-on-surface">Time of Check-in (HH:MM:SS)</label>
+              <input type="text" id="histManualTime" value="{{ datetime_now or '' }}" class="w-full bg-surface-container-low text-on-surface font-mono text-xs px-3 py-2.5 rounded-xl border border-outline-variant/30 outline-none focus:border-primary"/>
+            </div>
+
+            <button type="submit" class="w-full mt-2 bg-primary hover:bg-primary-container text-on-primary font-bold text-xs py-3 rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer">
+              <span class="material-symbols-outlined text-base">how_to_reg</span>
+              <span>Mark Attendance in CSV</span>
+            </button>
+          </form>
+
+          <div class="pt-3 border-t border-surface-container flex flex-col gap-2">
+            <a href="/api/export_csv?date={{ selected_date }}" class="w-full bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 border border-outline-variant/30">
+              <span class="material-symbols-outlined text-base">download</span>
+              <span>Download Raw CSV</span>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    let currentViewMode = 'all';
+
+    function changeDate(dateVal) {
+      window.location.href = `/history?date=${encodeURIComponent(dateVal)}`;
+    }
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      const btnAll = document.getElementById('btnViewAll');
+      const btnUnique = document.getElementById('btnViewUnique');
+      
+      if (mode === 'all') {
+        btnAll.className = "flex-1 py-1.5 rounded-lg text-xs font-bold transition bg-primary text-on-primary shadow-xs";
+        btnUnique.className = "flex-1 py-1.5 rounded-lg text-xs font-semibold transition text-on-surface-variant hover:text-on-surface";
+      } else {
+        btnUnique.className = "flex-1 py-1.5 rounded-lg text-xs font-bold transition bg-primary text-on-primary shadow-xs";
+        btnAll.className = "flex-1 py-1.5 rounded-lg text-xs font-semibold transition text-on-surface-variant hover:text-on-surface";
+      }
+      filterTable();
+    }
+
+    function filterTable() {
+      const query = document.getElementById('searchInput').value.trim().toLowerCase();
+      const rows = document.querySelectorAll('.record-row');
+      const seenNames = new Set();
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        const name = row.getAttribute('data-name');
+        let matchesSearch = !query || name.includes(query);
+        let matchesMode = true;
+
+        if (currentViewMode === 'unique') {
+          if (seenNames.has(name)) {
+            matchesMode = false;
+          } else {
+            seenNames.add(name);
+          }
+        }
+
+        if (matchesSearch && matchesMode) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      document.getElementById('filteredCountLabel').textContent = `Showing ${visibleCount} rows`;
+    }
+
+    // Toggle custom name input
+    const selectUser = document.getElementById('histSelectUser');
+    const customDiv = document.getElementById('histCustomNameDiv');
+    selectUser.addEventListener('change', function() {
+      if (this.value === 'custom') {
+        customDiv.classList.remove('hidden');
+      } else {
+        customDiv.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('histManualTime').value = new Date().toLocaleTimeString();
+
+    async function handleHistoryManualSubmit(e) {
+      e.preventDefault();
+      let name = selectUser.value;
+      if (name === 'custom') {
+        name = document.getElementById('histCustomName').value.trim();
+      }
+      if (!name) {
+        alert("Please enter or select a valid student name.");
+        return;
+      }
+
+      const timeStr = document.getElementById('histManualTime').value.trim() || new Date().toLocaleTimeString();
+      const dateStr = document.getElementById('dateSelect').value;
+
+      try {
+        const res = await fetch('/api/mark_attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name,
+            time: timeStr,
+            date: dateStr
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          alert(`Attendance successfully logged for ${name} at ${timeStr}!`);
+          window.location.reload();
+        } else {
+          alert("Error: " + data.message);
+        }
+      } catch (err) {
+        alert("Network error marking attendance.");
+      }
+    }
+  </script>
+</body>
+</html>
